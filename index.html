@@ -159,17 +159,23 @@
           </div>
           <div class="error"></div>
         </div>
-
+      
         <div class="field">
           <label for="expositionTotaleCopiable">Exposition totale à copier</label>
-          <div class="input-wrap">
-            <input id="expositionTotaleCopiable" class="output blue copy-output" type="text" readonly />
-            <span class="unit">V/m</span>
+          <div class="copy-row">
+            <div class="field">
+              <div class="input-wrap">
+                <input id="expositionTotaleCopiable" class="output blue copy-output" type="text" readonly />
+                <span class="unit">V/m</span>
+              </div>
+            </div>
+            <button id="copyTotalExposureButton" type="button" class="copy-band-button">
+              Copier
+            </button>
           </div>
           <div class="error"></div>
         </div>
       </div>
-
       <div id="dynamicExposureText" class="result-text"></div>
 
       <div class="footer-note">
