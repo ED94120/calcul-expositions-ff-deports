@@ -12,9 +12,10 @@ L’application est destinée à l’évaluation de l’exposition dans des cas 
 
 - le modèle d’antenne à faisceau fixe,
 - la distance 3D entre l’antenne et le POI,
+- le déport angulaire en azimut de l’antenne par rapport au POI,
 - le type de vitrage interposé,
 - la PIRE par bande,
-- les déports angulaires en azimut et en élévation,
+- le déport angulaire en élévation pour chaque bande,
 - les atténuations supplémentaires propres à chaque bande.
 
 ## Ce que fait l’application
@@ -30,28 +31,31 @@ L’application :
    - son libellé fréquentiel,
    - son diagramme en azimut,
    - son diagramme en élévation ;
-7. demande à l’utilisateur, pour chaque bande :
-   - la PIRE,
+7. demande à l’utilisateur, dans les **paramètres communs** :
+   - la distance 3D,
    - le déport angulaire en azimut,
+   - le type de vitrage,
+   - l’atténuation ANFR faisceau fixe ;
+8. demande à l’utilisateur, pour chaque bande :
+   - la PIRE,
    - le déport angulaire en élévation,
    - l’atténuation supplémentaire ;
-8. calcule pour chaque bande :
+9. calcule pour chaque bande :
    - l’atténuation azimutale,
    - l’atténuation en élévation,
-   - l’atténuation angulaire totale,
-   - l’atténuation vitrage,
-   - l’atténuation ANFR,
-   - l’atténuation totale,
-   - la PIRE finale,
    - l’exposition électrique de la bande ;
-9. calcule l’**exposition totale** au POI.
+10. met à disposition, dans un bloc de détails repliable, les résultats intermédiaires complets de la bande ;
+11. calcule l’**exposition totale** au POI ;
+12. fournit des champs **à copier** :
+   - pour chaque bande,
+   - pour l’exposition totale.
 
 ## Principes de calcul
 
 Pour chaque bande, l’application :
 
-- interpole les pertes du diagramme en fonction du déport en azimut ;
-- interpole les pertes du diagramme en fonction du déport en élévation ;
+- interpole les pertes du diagramme en fonction du **déport en azimut commun** à toutes les bandes ;
+- interpole les pertes du diagramme en fonction du **déport en élévation propre à la bande** ;
 - additionne les atténuations :
   - atténuation azimutale,
   - atténuation en élévation,
@@ -73,10 +77,52 @@ Les paramètres communs à toutes les bandes sont :
 
 - **Antenne à faisceau fixe**
 - **Distance 3D antenne – POI**
+- **Déport angulaire en azimut**
 - **Type de vitrage interposé**
 - **Atténuation ANFR faisceau fixe**
 
 Par défaut, l’atténuation ANFR est fixée à **4 dB**.
+
+## Paramètres propres à chaque bande
+
+Pour chaque bande détectée automatiquement dans le fichier diagramme, l’utilisateur renseigne :
+
+- **PIRE de la bande**
+- **Déport angulaire en élévation**
+- **Atténuation supplémentaire**
+
+## Résultats affichés par défaut
+
+Pour chaque bande, l’application affiche directement :
+
+- **l’atténuation azimutale** ;
+- **l’atténuation en élévation** ;
+- **l’exposition de la bande** avec **4 décimales** ;
+- **l’exposition à copier** avec **2 décimales** ;
+- un **bouton de copie**.
+
+## Détails techniques repliables
+
+Pour chaque bande, un bloc **Afficher les détails** permet d’accéder aux résultats intermédiaires suivants :
+
+- atténuation angulaire totale ;
+- atténuation vitrage appliquée ;
+- atténuation supplémentaire appliquée ;
+- atténuation ANFR appliquée ;
+- atténuation totale ;
+- PIRE finale en dBW ;
+- PIRE finale en W.
+
+Ces résultats détaillés sont masqués par défaut afin de privilégier la lisibilité et l’accès rapide au résultat utile.
+
+## Résultat global
+
+L’application affiche également :
+
+- **l’exposition totale** avec **4 décimales** ;
+- **l’exposition totale à copier** avec **2 décimales** ;
+- un **bouton de copie** ;
+- une **phrase dynamique** récapitulant le résultat.
 
 ## Mode expert
 
@@ -92,11 +138,22 @@ Quand le mode expert est activé :
 - l’atténuation ANFR devient modifiable ;
 - cette valeur modifiée est appliquée à toutes les bandes.
 
+## Ergonomie de l’application
+
+L’application a été conçue pour :
+
+- afficher rapidement les résultats les plus utiles ;
+- éviter de surcharger l’écran avec les résultats intermédiaires ;
+- permettre la copie directe des valeurs utiles à **2 décimales** ;
+- conserver l’accès aux détails techniques via des blocs repliables.
+
+Le recalcul est automatique lors de la saisie, avec une logique d’actualisation pensée pour ne pas dégrader le confort de saisie.
+
 ## Données utilisées
 
 Le code de l’application est hébergé dans ce dépôt.
 
-Les fichiers de données sont hébergés dans un autre dépôt GitHub, dans le dossier `data` du projet :
+Les fichiers de données sont hébergés dans un autre dépôt GitHub, dans le dossier `data` du projet source :
 
 - `antenna-specs.txt`
 - les fichiers diagrammes `.txt` des antennes
