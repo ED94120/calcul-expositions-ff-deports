@@ -1,3 +1,4 @@
+import { COPY_DECIMALS_VM } from "./config.js";
 import { VITRAGE_ATT_DB } from "./constants.js";
 import { dbwToW, formatNumberForDisplay } from "./utils.js";
 import {
@@ -115,7 +116,7 @@ export function computeBandExposureVM(pireFinaleW, distance3DMetres) {
 export function computeBandResult(commonInputs, bandState) {
   const angularLosses = computeAngularLosses(
     bandState.diagram,
-    bandState.parsed.deportAzimutDeg,
+    commonInputs.deportAzimutDeg,
     bandState.parsed.deportElevationDeg
   );
 
@@ -147,7 +148,8 @@ export function computeBandResult(commonInputs, bandState) {
     attenuationTotaleDB: totalAttenuation.attenuationTotaleDB,
     pireFinaleDBW,
     pireFinaleW,
-    expositionVM
+    expositionVM,
+    expositionCopiable: formatNumberForDisplay(expositionVM, COPY_DECIMALS_VM)
   };
 }
 
