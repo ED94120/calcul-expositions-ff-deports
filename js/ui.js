@@ -37,6 +37,7 @@ export function cacheDom() {
     dynamicExposureText: document.getElementById("dynamicExposureText"),
 
     copyExposureButton: document.getElementById("copyExposureButton"),
+    copyTotalExposureButton: document.getElementById("copyTotalExposureButton"),
     clearButton: document.getElementById("clearButton"),
 
     statusBox: document.getElementById("statusBox"),
@@ -637,6 +638,11 @@ export function hideStatus(dom) {
 }
 
 export function setCopyButtonEnabled(dom, enabled) {
-  if (!dom.copyExposureButton) return;
-  dom.copyExposureButton.disabled = !enabled;
+  if (dom.copyExposureButton) {
+    dom.copyExposureButton.disabled = !enabled;
+  }
+
+  if (dom.copyTotalExposureButton) {
+    dom.copyTotalExposureButton.disabled = !enabled;
+  }
 }
