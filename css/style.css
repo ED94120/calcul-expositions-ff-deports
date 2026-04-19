@@ -361,7 +361,7 @@ button:disabled{
   display: grid;
   grid-template-columns: 1fr 120px;
   gap: 10px;
-  align-items: end;
+  align-items: start;
 }
 
 .copy-row .field{
@@ -382,8 +382,8 @@ button:disabled{
   width: 120px;
   min-width: 120px;
   height: 42px;
-  margin: 0;
-  align-self: end;
+  margin-top: 24px;
+  align-self: start;
 }
 
 .band-details{
