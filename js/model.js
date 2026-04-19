@@ -6,6 +6,7 @@ export function createInitialState() {
     settings: {
       selectedAntennaId: "",
       distance3DText: "",
+      deportAzimutText: "",
       vitrageKey: DEFAULT_VITRAGE_KEY,
       expertMode: false,
       attenuationAnfrText: String(DEFAULT_ANFR_ATTENUATION_DB)
@@ -26,6 +27,7 @@ export function createInitialState() {
     errors: {
       selectedAntenna: "",
       distance3D: "",
+      deportAzimut: "",
       vitrage: "",
       attenuationAnfr: "",
       diagramLoading: "",
@@ -46,14 +48,12 @@ export function createEmptyBandState(diagramBand) {
 
     inputs: {
       pireInitialeText: "",
-      deportAzimutText: "",
       deportElevationText: "",
       attenuationSupplementaireText: ""
     },
 
     parsed: {
       pireInitialeDBW: null,
-      deportAzimutDeg: null,
       deportElevationDeg: null,
       attenuationSupplementaireDB: 0
     },
@@ -77,12 +77,12 @@ export function createEmptyBandState(diagramBand) {
       attenuationTotaleDB: null,
       pireFinaleDBW: null,
       pireFinaleW: null,
-      expositionVM: null
+      expositionVM: null,
+      expositionCopiable: ""
     },
 
     errors: {
       pireInitiale: "",
-      deportAzimut: "",
       deportElevation: "",
       attenuationSupplementaire: "",
       band: ""
@@ -103,7 +103,6 @@ export function createBandsStateFromDiagram(selectedDiagram) {
 export function resetComputedBandState(bandState) {
   bandState.parsed = {
     pireInitialeDBW: null,
-    deportAzimutDeg: null,
     deportElevationDeg: null,
     attenuationSupplementaireDB: 0
   };
@@ -118,12 +117,12 @@ export function resetComputedBandState(bandState) {
     attenuationTotaleDB: null,
     pireFinaleDBW: null,
     pireFinaleW: null,
-    expositionVM: null
+    expositionVM: null,
+    expositionCopiable: ""
   };
 
   bandState.errors = {
     pireInitiale: "",
-    deportAzimut: "",
     deportElevation: "",
     attenuationSupplementaire: "",
     band: ""
