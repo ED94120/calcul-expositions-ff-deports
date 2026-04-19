@@ -399,6 +399,11 @@ function bindEvents() {
   });
 
   dom.copyExposureButton.addEventListener("click", handleCopyTotalExposure);
+
+  if (dom.copyTotalExposureButton) {
+    dom.copyTotalExposureButton.addEventListener("click", handleCopyTotalExposure);
+  }
+  
   dom.clearButton.addEventListener("click", handleReset);
 }
 
