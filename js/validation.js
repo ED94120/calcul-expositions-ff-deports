@@ -30,6 +30,7 @@ export function validateCommonInputs(settings) {
   const errors = {
     selectedAntenna: "",
     distance3D: "",
+    deportAzimut: "",
     vitrage: "",
     attenuationAnfr: ""
   };
@@ -37,6 +38,7 @@ export function validateCommonInputs(settings) {
   const parsedCommonInputs = {
     selectedAntennaId: settings.selectedAntennaId,
     distance3DMetres: null,
+    deportAzimutDeg: null,
     vitrageKey: settings.vitrageKey,
     attenuationAnfrDB: null,
     expertMode: !!settings.expertMode
@@ -59,6 +61,18 @@ export function validateCommonInputs(settings) {
     valid = false;
   } else {
     parsedCommonInputs.distance3DMetres = distance3DMetres;
+  }
+
+  const deportAzimutDeg = parseLocalizedNumber(settings.deportAzimutText);
+
+  if (deportAzimutDeg === null) {
+    errors.deportAzimut = "Valeur requise.";
+    valid = false;
+  } else if (!validateAzimuth(deportAzimutDeg)) {
+    errors.deportAzimut = "L’azimut doit être compris entre -180° et +180°, ou entre 0° et 360°.";
+    valid = false;
+  } else {
+    parsedCommonInputs.deportAzimutDeg = deportAzimutDeg;
   }
 
   if (!settings.vitrageKey) {
@@ -97,7 +111,6 @@ export function validateCommonInputs(settings) {
 export function validateBandInputs(bandState) {
   const errors = {
     pireInitiale: "",
-    deportAzimut: "",
     deportElevation: "",
     attenuationSupplementaire: "",
     band: ""
@@ -105,21 +118,34 @@ export function validateBandInputs(bandState) {
 
   const parsedBandInputs = {
     pireInitialeDBW: null,
-    deportAzimutDeg: null,
     deportElevationDeg: null,
     attenuationSupplementaireDB: 0
   };
 
+  const pireText = String(bandState.inputs.pireInitialeText ?? "").trim();
+  const elevationText = String(bandState.inputs.deportElevationText ?? "").trim();
+  const suppText = String(bandState.inputs.attenuationSupplementaireText ?? "").trim();
+
+  const isCompletelyEmpty =
+    pireText === "" &&
+    elevationText === "" &&
+    suppText === "";
+
+  if (isCompletelyEmpty) {
+    return {
+      valid: false,
+      parsedBandInputs,
+      errors,
+      status: BAND_STATUS.VIDE
+    };
+  }
+
   let valid = true;
 
-  const pireInitialeDBW = parseLocalizedNumber(bandState.inputs.pireInitialeText);
-  const deportAzimutDeg = parseLocalizedNumber(bandState.inputs.deportAzimutText);
-  const deportElevationDeg = parseLocalizedNumber(bandState.inputs.deportElevationText);
-
+  const pireInitialeDBW = parseLocalizedNumber(pireText);
+  const deportElevationDeg = parseLocalizedNumber(elevationText);
   const attenuationSupplementaireDB =
-    String(bandState.inputs.attenuationSupplementaireText ?? "").trim() === ""
-      ? 0
-      : parseLocalizedNumber(bandState.inputs.attenuationSupplementaireText);
+    suppText === "" ? 0 : parseLocalizedNumber(suppText);
 
   if (pireInitialeDBW === null) {
     errors.pireInitiale = "Valeur requise.";
@@ -129,16 +155,6 @@ export function validateBandInputs(bandState) {
     valid = false;
   } else {
     parsedBandInputs.pireInitialeDBW = pireInitialeDBW;
-  }
-
-  if (deportAzimutDeg === null) {
-    errors.deportAzimut = "Valeur requise.";
-    valid = false;
-  } else if (!validateAzimuth(deportAzimutDeg)) {
-    errors.deportAzimut = "L’azimut doit être compris entre -180° et +180°, ou entre 0° et 360°.";
-    valid = false;
-  } else {
-    parsedBandInputs.deportAzimutDeg = deportAzimutDeg;
   }
 
   if (deportElevationDeg === null) {
@@ -171,11 +187,4 @@ export function validateBandInputs(bandState) {
     errors,
     status: valid ? BAND_STATUS.VALIDE : BAND_STATUS.INVALIDE
   };
-}
-
-export function validateAllBands(bands) {
-  return (Array.isArray(bands) ? bands : []).map((band) => ({
-    key: band.key,
-    validation: validateBandInputs(band)
-  }));
 }
