@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exposition générée par une antenne à faisceau fixe</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="page">
+    <h1>Exposition générée par une antenne à faisceau fixe à partir du diagramme antenne</h1>
+    <p class="subtitle">
+      Calcul automatique de l’exposition au POI par bande à partir des diagrammes d’antenne,
+      du vitrage, de l’atténuation ANFR et des atténuations additionnelles.
+    </p>
 
+    <div class="layout">
+      <section class="panel">
+        <h2>Paramètres communs</h2>
+        <p class="section-note">
+          Les champs à bordure rouge correspondent aux données saisies ou modifiables par l’utilisateur.
+        </p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="antennaSelect">Antenne à faisceau fixe</label>
+            <select id="antennaSelect" class="control red">
+              <option value="">Sélectionner une antenne à faisceau fixe</option>
+            </select>
+            <div class="error" id="antennaError"></div>
+          </div>
+
+          <div class="field">
+            <label for="distance3D">Distance 3D antenne – POI</label>
+            <div class="input-wrap">
+              <input
+                id="distance3D"
+                class="control red"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="Exemple : 100"
+              />
+              <span class="unit">m</span>
+            </div>
+            <div class="error" id="distance3DError"></div>
+          </div>
+
+          <div class="field">
+            <label for="vitrageType">Type de vitrage interposé</label>
+            <select id="vitrageType" class="control red">
+              <option value="simple" selected>Simple vitrage (2 dB)</option>
+              <option value="double">Double vitrage (3,8 dB)</option>
+              <option value="faible_emissivite">Verre à faible émissivité (25 dB)</option>
+              <option value="exterieur">Extérieur (0 dB)</option>
+            </select>
+            <div class="error" id="vitrageTypeError"></div>
+          </div>
+
+          <div class="field">
+            <label for="attenuationAnfrDB">Atténuation ANFR faisceau fixe</label>
+            <div class="input-wrap">
+              <input
+                id="attenuationAnfrDB"
+                class="output blue"
+                type="text"
+                inputmode="decimal"
+                readonly
+              />
+              <span class="unit">dB</span>
+            </div>
+            <div class="error" id="attenuationAnfrDBError"></div>
+          </div>
+        </div>
+
+        <div class="checkbox-line">
+          <input type="checkbox" id="modeExpertActif" />
+          <label for="modeExpertActif"><strong>Mode expert (atténuation ANFR modifiable)</strong></label>
+        </div>
+
+        <div class="actions">
+          <button id="clearButton" type="button">Effacer</button>
+          <button id="copyExposureButton" type="button" disabled>Copier l’exposition totale</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Informations sur l’antenne chargée</h2>
+        <p class="section-note">
+          Les champs à bordure bleue sont calculés automatiquement ou affichés à titre informatif.
+        </p>
+
+        <div class="grid">
+          <div class="field">
+            <label for="nomFichierDiagramme">Fichier diagramme utilisé</label>
+            <div class="input-wrap">
+              <input id="nomFichierDiagramme" class="output blue" type="text" readonly />
+              <span class="unit">txt</span>
+            </div>
+            <div class="error"></div>
+          </div>
+
+          <div class="field">
+            <label for="nombreBandesDetectees">Nombre de bandes détectées</label>
+            <div class="input-wrap">
+              <input id="nombreBandesDetectees" class="output blue" type="text" readonly />
+              <span class="unit">nb</span>
+            </div>
+            <div class="error"></div>
+          </div>
+        </div>
+
+        <div class="remarks-panel">
+          <div class="remarks-title">Remarques liées à l’antenne sélectionnée</div>
+          <div id="antennaRemarks" class="remarks-box"></div>
+        </div>
+
+        <div id="statusBox" class="status-box">
+          <div id="statusTitle" class="status-title"></div>
+          <div id="statusMessage"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel bands-panel">
+      <h2>Calcul par bande</h2>
+      <p class="section-note">
+        Les cartes des bandes sont générées automatiquement après chargement du fichier diagramme de l’antenne sélectionnée.
+      </p>
+
+      <div id="bandsContainer" class="bands-container"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Résultat global</h2>
+
+      <div class="grid">
+        <div class="field">
+          <label for="expositionTotaleVM">Exposition totale</label>
+          <div class="input-wrap">
+            <input id="expositionTotaleVM" class="output blue" type="text" readonly />
+            <span class="unit">V/m</span>
+          </div>
+          <div class="error"></div>
+        </div>
+
+        <div class="field">
+          <label for="expositionTotaleCopiable">Valeur copiable</label>
+          <div class="input-wrap">
+            <input id="expositionTotaleCopiable" class="output blue" type="text" readonly />
+            <span class="unit">V/m</span>
+          </div>
+          <div class="error"></div>
+        </div>
+      </div>
+
+      <div id="dynamicExposureText" class="result-text"></div>
+
+      <div class="footer-note">
+        Les résultats apparaissent automatiquement dès que toutes les données nécessaires sont valides.
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
