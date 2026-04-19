@@ -115,7 +115,7 @@ function recomputeApplicationState() {
   applyCommonValidation(commonValidation);
 
   let hasInvalidBand = false;
-  let hasEmptyBand = false;
+  let hasAtLeastOneValidBand = false;
 
   state.bands.forEach((band) => {
     const validation = validateBandInputs(band);
@@ -125,7 +125,6 @@ function recomputeApplicationState() {
     band.parsed = { ...band.parsed, ...validation.parsedBandInputs };
 
     if (validation.status === BAND_STATUS.VIDE) {
-      hasEmptyBand = true;
       return;
     }
 
@@ -141,6 +140,7 @@ function recomputeApplicationState() {
     try {
       band.computed = computeBandResult(commonValidation.parsedCommonInputs, band);
       band.status = BAND_STATUS.VALIDE;
+      hasAtLeastOneValidBand = true;
     } catch {
       band.status = BAND_STATUS.INVALIDE;
       band.errors.band = "Le calcul de cette bande est impossible.";
@@ -150,13 +150,13 @@ function recomputeApplicationState() {
 
   if (
     commonValidation.valid &&
-    state.bands.length > 0 &&
     !hasInvalidBand &&
-    !hasEmptyBand &&
-    state.bands.every((band) => band.status === BAND_STATUS.VALIDE)
+    hasAtLeastOneValidBand
   ) {
     const totalExposureVM = computeTotalExposureVM(
-      state.bands.map((band) => band.computed)
+      state.bands
+        .filter((band) => band.status === BAND_STATUS.VALIDE)
+        .map((band) => band.computed)
     );
 
     state.results.expositionTotaleVM = totalExposureVM;
