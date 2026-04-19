@@ -382,14 +382,6 @@ button:disabled{
   align-self: flex-end;
 }
 
-.copy-row .field{
-  flex: 1 1 240px;
-}
-
-.copy-row .copy-band-button{
-  min-width: 120px;
-}
-
 .band-details{
   margin-top: 14px;
   border-top: 1px solid #dce6f4;
