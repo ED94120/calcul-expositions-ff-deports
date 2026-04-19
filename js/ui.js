@@ -14,6 +14,9 @@ export function cacheDom() {
     distance3DInput: document.getElementById("distance3D"),
     distance3DError: document.getElementById("distance3DError"),
 
+    deportAzimutInput: document.getElementById("deportAzimut"),
+    deportAzimutError: document.getElementById("deportAzimutError"),
+
     vitrageSelect: document.getElementById("vitrageType"),
     vitrageError: document.getElementById("vitrageTypeError"),
 
@@ -129,6 +132,15 @@ export function renderAntennaOptions(dom, antennaCatalog) {
   });
 }
 
+export function renderCommonInputs(dom, state) {
+  if (dom.antennaSelect) dom.antennaSelect.value = state.settings.selectedAntennaId ?? "";
+  if (dom.distance3DInput) dom.distance3DInput.value = state.settings.distance3DText ?? "";
+  if (dom.deportAzimutInput) dom.deportAzimutInput.value = state.settings.deportAzimutText ?? "";
+  if (dom.vitrageSelect) dom.vitrageSelect.value = state.settings.vitrageKey ?? "";
+  if (dom.expertModeCheckbox) dom.expertModeCheckbox.checked = !!state.settings.expertMode;
+  updateExpertModeUI(dom, state.settings.expertMode, state.settings.attenuationAnfrText);
+}
+
 export function renderAntennaRemarks(dom, selectedAntennaMeta) {
   if (!dom.antennaRemarksContainer) return;
 
@@ -171,6 +183,129 @@ export function clearDiagramInfo(dom) {
   if (dom.bandCountInput) dom.bandCountInput.value = "";
 }
 
+export function clearBandsStructure(dom) {
+  if (!dom.bandsContainer) return;
+  dom.bandsContainer.innerHTML = "";
+}
+
+function createCopyRow(bandState) {
+  const row = document.createElement("div");
+  row.className = "copy-row";
+
+  const field = createField({
+    labelText: "Exposition à copier",
+    inputId: `expositionCopiable_${bandState.key}`,
+    inputClassName: "output blue copy-output",
+    value: "",
+    unit: "V/m",
+    readOnly: true
+  });
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-band-button";
+  button.dataset.bandKey = bandState.key;
+  button.textContent = "Copier";
+
+  row.append(field, button);
+  return row;
+}
+
+function createDetailsBlock(bandState) {
+  const details = document.createElement("details");
+  details.className = "band-details";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "Afficher les détails";
+
+  details.addEventListener("toggle", () => {
+    summary.textContent = details.open ? "Masquer les détails" : "Afficher les détails";
+  });
+
+  const grid = document.createElement("div");
+  grid.className = "band-details-grid";
+
+  grid.appendChild(
+    createField({
+      labelText: "Atténuation angulaire totale",
+      inputId: `attenuationAngulaireTotale_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dB",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "Atténuation vitrage appliquée",
+      inputId: `attenuationVitrage_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dB",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "Atténuation supplémentaire appliquée",
+      inputId: `attenuationSupplementaireAppliquee_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dB",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "Atténuation ANFR appliquée",
+      inputId: `attenuationAnfrAppliquee_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dB",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "Atténuation totale",
+      inputId: `attenuationTotale_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dB",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "PIRE finale",
+      inputId: `pireFinaleDBW_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "dBW",
+      readOnly: true
+    })
+  );
+
+  grid.appendChild(
+    createField({
+      labelText: "PIRE finale",
+      inputId: `pireFinaleW_${bandState.key}`,
+      inputClassName: "output blue",
+      value: "",
+      unit: "W",
+      readOnly: true
+    })
+  );
+
+  details.append(summary, grid);
+  return details;
+}
+
 export function createBandCard(bandState, index) {
   const article = document.createElement("article");
   article.className = "band-card";
@@ -190,8 +325,8 @@ export function createBandCard(bandState, index) {
 
   header.append(title, status);
 
-  const grid = document.createElement("div");
-  grid.className = "band-grid";
+  const mainGrid = document.createElement("div");
+  mainGrid.className = "band-main-grid";
 
   const leftCol = createBandColumn();
   const rightCol = createBandColumn();
@@ -205,16 +340,6 @@ export function createBandCard(bandState, index) {
       value: bandState.inputs.pireInitialeText ?? "",
       unit: "dBW",
       placeholder: "Exemple : 47,6"
-    })
-  );
-  leftCol.appendChild(
-    createField({
-      labelText: "Déport angulaire en azimut",
-      inputId: `deportAzimut_${bandState.key}`,
-      inputClassName: "control red band-input",
-      value: bandState.inputs.deportAzimutText ?? "",
-      unit: "°",
-      placeholder: "Exemple : 30"
     })
   );
   leftCol.appendChild(
@@ -238,7 +363,7 @@ export function createBandCard(bandState, index) {
     })
   );
 
-  rightCol.appendChild(createBandSectionTitle("Résultats calculés"));
+  rightCol.appendChild(createBandSectionTitle("Résultats visibles"));
   rightCol.appendChild(
     createField({
       labelText: "Atténuation azimutale",
@@ -261,76 +386,6 @@ export function createBandCard(bandState, index) {
   );
   rightCol.appendChild(
     createField({
-      labelText: "Atténuation angulaire totale",
-      inputId: `attenuationAngulaireTotale_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dB",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "Atténuation vitrage appliquée",
-      inputId: `attenuationVitrage_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dB",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "Atténuation supplémentaire appliquée",
-      inputId: `attenuationSupplementaireAppliquee_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dB",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "Atténuation ANFR appliquée",
-      inputId: `attenuationAnfrAppliquee_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dB",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "Atténuation totale",
-      inputId: `attenuationTotale_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dB",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "PIRE finale",
-      inputId: `pireFinaleDBW_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "dBW",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
-      labelText: "PIRE finale",
-      inputId: `pireFinaleW_${bandState.key}`,
-      inputClassName: "output blue",
-      value: "",
-      unit: "W",
-      readOnly: true
-    })
-  );
-  rightCol.appendChild(
-    createField({
       labelText: "Exposition de la bande",
       inputId: `expositionVM_${bandState.key}`,
       inputClassName: "output blue",
@@ -339,14 +394,15 @@ export function createBandCard(bandState, index) {
       readOnly: true
     })
   );
+  rightCol.appendChild(createCopyRow(bandState));
 
-  grid.append(leftCol, rightCol);
-  article.append(header, grid);
+  mainGrid.append(leftCol, rightCol);
+  article.append(header, mainGrid, createDetailsBlock(bandState));
 
   return article;
 }
 
-export function renderBandsContainer(dom, bands) {
+export function renderBandsStructure(dom, bands) {
   if (!dom.bandsContainer) return;
 
   dom.bandsContainer.innerHTML = "";
@@ -356,33 +412,27 @@ export function renderBandsContainer(dom, bands) {
   });
 }
 
-export function populateBandInputsFromState(bands) {
-  (Array.isArray(bands) ? bands : []).forEach((band) => {
-    const pireInput = document.getElementById(`pireInitiale_${band.key}`);
-    if (pireInput) pireInput.value = band.inputs.pireInitialeText ?? "";
-
-    const azInput = document.getElementById(`deportAzimut_${band.key}`);
-    if (azInput) azInput.value = band.inputs.deportAzimutText ?? "";
-
-    const elInput = document.getElementById(`deportElevation_${band.key}`);
-    if (elInput) elInput.value = band.inputs.deportElevationText ?? "";
-
-    const suppInput = document.getElementById(`attenuationSupplementaire_${band.key}`);
-    if (suppInput) suppInput.value = band.inputs.attenuationSupplementaireText ?? "";
-  });
-}
-
 export function renderBandComputedValues(bands) {
   (Array.isArray(bands) ? bands : []).forEach((band) => {
     const c = band.computed ?? {};
 
-    const setValue = (id, value, decimals) => {
+    const setValue = (id, value, decimals = null) => {
       const input = document.getElementById(id);
-      if (input) input.value = formatNumberForDisplay(value, decimals);
+      if (!input) return;
+
+      if (typeof value === "string") {
+        input.value = value;
+        return;
+      }
+
+      input.value = formatNumberForDisplay(value, decimals);
     };
 
     setValue(`attenuationAzimutale_${band.key}`, c.attenuationAzimutaleDB, DISPLAY_DECIMALS_DB);
     setValue(`attenuationElevation_${band.key}`, c.attenuationElevationDB, DISPLAY_DECIMALS_DB);
+    setValue(`expositionVM_${band.key}`, c.expositionVM, DISPLAY_DECIMALS_VM);
+    setValue(`expositionCopiable_${band.key}`, c.expositionCopiable);
+
     setValue(`attenuationAngulaireTotale_${band.key}`, c.attenuationAngulaireTotaleDB, DISPLAY_DECIMALS_DB);
     setValue(`attenuationVitrage_${band.key}`, c.attenuationVitrageDB, DISPLAY_DECIMALS_DB);
     setValue(`attenuationSupplementaireAppliquee_${band.key}`, c.attenuationSupplementaireAppliqueeDB, DISPLAY_DECIMALS_DB);
@@ -390,7 +440,6 @@ export function renderBandComputedValues(bands) {
     setValue(`attenuationTotale_${band.key}`, c.attenuationTotaleDB, DISPLAY_DECIMALS_DB);
     setValue(`pireFinaleDBW_${band.key}`, c.pireFinaleDBW, DISPLAY_DECIMALS_DB);
     setValue(`pireFinaleW_${band.key}`, c.pireFinaleW, DISPLAY_DECIMALS_W);
-    setValue(`expositionVM_${band.key}`, c.expositionVM, DISPLAY_DECIMALS_VM);
   });
 }
 
@@ -451,12 +500,15 @@ function setBandStatus(bandKey, message) {
   if (card) card.classList.add("band-card-error");
 }
 
-export function resetVisualErrors(dom, state) {
+export function resetVisualErrors(state, dom) {
   if (dom.antennaSelect) dom.antennaSelect.classList.remove("invalid");
   if (dom.antennaError) dom.antennaError.textContent = "";
 
   if (dom.distance3DInput) dom.distance3DInput.classList.remove("invalid");
   if (dom.distance3DError) dom.distance3DError.textContent = "";
+
+  if (dom.deportAzimutInput) dom.deportAzimutInput.classList.remove("invalid");
+  if (dom.deportAzimutError) dom.deportAzimutError.textContent = "";
 
   if (dom.vitrageSelect) dom.vitrageSelect.classList.remove("invalid");
   if (dom.vitrageError) dom.vitrageError.textContent = "";
@@ -466,7 +518,6 @@ export function resetVisualErrors(dom, state) {
 
   (Array.isArray(state?.bands) ? state.bands : []).forEach((band) => {
     clearFieldErrorById(`pireInitiale_${band.key}`);
-    clearFieldErrorById(`deportAzimut_${band.key}`);
     clearFieldErrorById(`deportElevation_${band.key}`);
     clearFieldErrorById(`attenuationSupplementaire_${band.key}`);
     clearBandStatus(band.key);
@@ -484,6 +535,11 @@ export function renderErrors(state, dom) {
     if (dom.distance3DError) dom.distance3DError.textContent = state.errors.distance3D;
   }
 
+  if (state?.errors?.deportAzimut) {
+    if (dom.deportAzimutInput) dom.deportAzimutInput.classList.add("invalid");
+    if (dom.deportAzimutError) dom.deportAzimutError.textContent = state.errors.deportAzimut;
+  }
+
   if (state?.errors?.vitrage) {
     if (dom.vitrageSelect) dom.vitrageSelect.classList.add("invalid");
     if (dom.vitrageError) dom.vitrageError.textContent = state.errors.vitrage;
@@ -497,10 +553,6 @@ export function renderErrors(state, dom) {
   (Array.isArray(state?.bands) ? state.bands : []).forEach((band) => {
     if (band.errors?.pireInitiale) {
       setFieldErrorById(`pireInitiale_${band.key}`, band.errors.pireInitiale);
-    }
-
-    if (band.errors?.deportAzimut) {
-      setFieldErrorById(`deportAzimut_${band.key}`, band.errors.deportAzimut);
     }
 
     if (band.errors?.deportElevation) {
@@ -520,6 +572,7 @@ export function renderErrors(state, dom) {
 export function readCommonInputsFromDom(dom, state) {
   state.settings.selectedAntennaId = dom.antennaSelect?.value ?? "";
   state.settings.distance3DText = dom.distance3DInput?.value ?? "";
+  state.settings.deportAzimutText = dom.deportAzimutInput?.value ?? "";
   state.settings.vitrageKey = dom.vitrageSelect?.value ?? "";
   state.settings.expertMode = !!dom.expertModeCheckbox?.checked;
   state.settings.attenuationAnfrText = dom.attenuationAnfrInput?.value ?? "";
@@ -528,12 +581,10 @@ export function readCommonInputsFromDom(dom, state) {
 export function readBandInputsFromDom(state) {
   (Array.isArray(state?.bands) ? state.bands : []).forEach((band) => {
     const pireInput = document.getElementById(`pireInitiale_${band.key}`);
-    const azInput = document.getElementById(`deportAzimut_${band.key}`);
     const elInput = document.getElementById(`deportElevation_${band.key}`);
     const suppInput = document.getElementById(`attenuationSupplementaire_${band.key}`);
 
     band.inputs.pireInitialeText = pireInput?.value ?? "";
-    band.inputs.deportAzimutText = azInput?.value ?? "";
     band.inputs.deportElevationText = elInput?.value ?? "";
     band.inputs.attenuationSupplementaireText = suppInput?.value ?? "";
   });
@@ -588,23 +639,4 @@ export function hideStatus(dom) {
 export function setCopyButtonEnabled(dom, enabled) {
   if (!dom.copyExposureButton) return;
   dom.copyExposureButton.disabled = !enabled;
-}
-
-export function renderApp(state, dom) {
-  if (dom.antennaSelect) dom.antennaSelect.value = state.settings.selectedAntennaId ?? "";
-  if (dom.distance3DInput) dom.distance3DInput.value = state.settings.distance3DText ?? "";
-  if (dom.vitrageSelect) dom.vitrageSelect.value = state.settings.vitrageKey ?? "";
-  if (dom.expertModeCheckbox) dom.expertModeCheckbox.checked = !!state.settings.expertMode;
-
-  updateExpertModeUI(dom, state.settings.expertMode, state.settings.attenuationAnfrText);
-  renderDiagramInfo(dom, state.selectedDiagram);
-  renderAntennaRemarks(dom, state.selectedAntennaMeta);
-  renderBandsContainer(dom, state.bands);
-  populateBandInputsFromState(state.bands);
-  renderBandComputedValues(state.bands);
-  clearGlobalResults(dom);
-  renderGlobalResults(dom, state.results);
-  resetVisualErrors(dom, state);
-  renderErrors(state, dom);
-  setCopyButtonEnabled(dom, !!state.results?.expositionTotaleCopiable);
 }
