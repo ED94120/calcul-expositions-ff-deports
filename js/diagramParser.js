@@ -155,7 +155,7 @@ export function parseDiagramFile(rawText, fileName = "") {
     index += 1;
   }
 
-  index += 1; // saute la ligne du nom antenne
+  index += 1;
 
   const bands = [];
 
