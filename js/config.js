@@ -9,3 +9,5 @@ export const DISPLAY_DECIMALS_DB = 2;
 export const DISPLAY_DECIMALS_W = 2;
 export const DISPLAY_DECIMALS_VM = 4;
 export const COPY_DECIMALS_VM = 2;
+
+export const INPUT_DEBOUNCE_MS = 350;
