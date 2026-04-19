@@ -139,6 +139,12 @@ select.control.red.invalid{
   cursor: default;
 }
 
+.copy-output{
+  font-weight: bold;
+  border-width: 2px;
+  background: #eef6ff;
+}
+
 .unit{
   min-width: 60px;
   display: flex;
@@ -228,12 +234,14 @@ button:disabled{
   background: #8f1c1c;
 }
 
-#copyExposureButton{
+#copyExposureButton,
+.copy-band-button{
   background: #0b7f3f;
   color: #fff;
 }
 
-#copyExposureButton:hover{
+#copyExposureButton:hover,
+.copy-band-button:hover{
   background: #096633;
 }
 
@@ -331,7 +339,7 @@ button:disabled{
   text-align: right;
 }
 
-.band-grid{
+.band-main-grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
@@ -347,6 +355,48 @@ button:disabled{
   margin: 0 0 2px 0;
   font-size: 15px;
   color: #284b63;
+}
+
+.copy-row{
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.copy-row .field{
+  flex: 1 1 240px;
+}
+
+.copy-row .copy-band-button{
+  min-width: 120px;
+}
+
+.band-details{
+  margin-top: 14px;
+  border-top: 1px solid #dce6f4;
+  padding-top: 12px;
+}
+
+.band-details summary{
+  cursor: pointer;
+  font-weight: bold;
+  color: #284b63;
+  margin-bottom: 10px;
+}
+
+.band-details[open] summary{
+  margin-bottom: 12px;
+}
+
+.band-details-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f7f9fc;
+  border: 1px solid #e1e7ef;
 }
 
 .result-text{
@@ -372,7 +422,8 @@ button:disabled{
     grid-template-columns: 1fr;
   }
 
-  .band-grid{
+  .band-main-grid,
+  .band-details-grid{
     grid-template-columns: 1fr;
   }
 }
