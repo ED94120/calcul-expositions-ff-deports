@@ -454,4 +454,10 @@ button:disabled{
   h1{
     font-size: 24px;
   }
+
+#copyTotalExposureButton{
+  margin-top: 0;
+  align-self: end;
+}
+  
 }
