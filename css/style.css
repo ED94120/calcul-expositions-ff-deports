@@ -358,28 +358,32 @@ button:disabled{
 }
 
 .copy-row{
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 120px;
   gap: 10px;
-  align-items: stretch;
-  flex-wrap: nowrap;
+  align-items: end;
 }
 
 .copy-row .field{
-  flex: 1 1 auto;
   margin: 0;
+}
+
+.copy-row .field label{
+  min-height: 18px;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .copy-row .field .input-wrap{
-  height: 42px;
+  min-height: 42px;
 }
 
 .copy-row .copy-band-button{
+  width: 120px;
   min-width: 120px;
   height: 42px;
-  align-self: flex-end;
+  margin: 0;
+  align-self: end;
 }
 
 .band-details{
