@@ -51,7 +51,6 @@ export function parseAntennaSpecsBlock(blockText) {
 
 export function parseAntennaSpecs(rawText) {
   const blocks = splitSpecsBlocks(rawText);
-
   return blocks.map((blockText) => parseAntennaSpecsBlock(blockText));
 }
 
