@@ -2,7 +2,8 @@ import {
   ANTENNA_SPECS_URL,
   DATA_BASE_URL,
   DEFAULT_ANFR_ATTENUATION_DB,
-  COPY_DECIMALS_VM
+  COPY_DECIMALS_VM,
+  INPUT_DEBOUNCE_MS
 } from "./config.js";
 import { BAND_STATUS, VITRAGE_KEYS } from "./constants.js";
 import { copyTextToClipboard, formatNumberForCopy } from "./utils.js";
@@ -22,16 +23,29 @@ import {
 import {
   cacheDom,
   renderAntennaOptions,
-  renderApp,
+  renderCommonInputs,
+  renderAntennaRemarks,
+  clearAntennaRemarks,
+  renderDiagramInfo,
+  clearDiagramInfo,
+  renderBandsStructure,
+  clearBandsStructure,
+  renderBandComputedValues,
+  renderGlobalResults,
+  clearGlobalResults,
   readCommonInputsFromDom,
   readBandInputsFromDom,
+  resetVisualErrors,
+  renderErrors,
+  updateExpertModeUI,
   showStatus,
-  hideStatus
+  hideStatus,
+  setCopyButtonEnabled
 } from "./ui.js";
 
 let state = createInitialState();
 let dom = null;
-let isProgrammaticUpdate = false;
+let debounceTimer = null;
 
 function getVitrageDynamicLabel(vitrageKey) {
   switch (vitrageKey) {
@@ -51,6 +65,7 @@ function clearGlobalErrors() {
   state.errors = {
     selectedAntenna: "",
     distance3D: "",
+    deportAzimut: "",
     vitrage: "",
     attenuationAnfr: "",
     diagramLoading: "",
@@ -74,8 +89,21 @@ function syncInputsToState() {
 function applyCommonValidation(commonValidation) {
   state.errors.selectedAntenna = commonValidation.errors.selectedAntenna;
   state.errors.distance3D = commonValidation.errors.distance3D;
+  state.errors.deportAzimut = commonValidation.errors.deportAzimut;
   state.errors.vitrage = commonValidation.errors.vitrage;
   state.errors.attenuationAnfr = commonValidation.errors.attenuationAnfr;
+}
+
+function updateViewOnly() {
+  renderCommonInputs(dom, state);
+  renderDiagramInfo(dom, state.selectedDiagram);
+  renderAntennaRemarks(dom, state.selectedAntennaMeta);
+  renderBandComputedValues(state.bands);
+  clearGlobalResults(dom);
+  renderGlobalResults(dom, state.results);
+  resetVisualErrors(state, dom);
+  renderErrors(state, dom);
+  setCopyButtonEnabled(dom, !!state.results?.expositionTotaleCopiable);
 }
 
 function recomputeApplicationState() {
@@ -86,12 +114,8 @@ function recomputeApplicationState() {
   const commonValidation = validateCommonInputs(state.settings);
   applyCommonValidation(commonValidation);
 
-  if (!commonValidation.valid) {
-    renderApp(state, dom);
-    return;
-  }
-
   let hasInvalidBand = false;
+  let hasEmptyBand = false;
 
   state.bands.forEach((band) => {
     const validation = validateBandInputs(band);
@@ -100,41 +124,67 @@ function recomputeApplicationState() {
     band.status = validation.status;
     band.parsed = { ...band.parsed, ...validation.parsedBandInputs };
 
+    if (validation.status === BAND_STATUS.VIDE) {
+      hasEmptyBand = true;
+      return;
+    }
+
     if (!validation.valid) {
       hasInvalidBand = true;
+      return;
+    }
+
+    if (!commonValidation.valid) {
       return;
     }
 
     try {
       band.computed = computeBandResult(commonValidation.parsedCommonInputs, band);
       band.status = BAND_STATUS.VALIDE;
-    } catch (error) {
+    } catch {
       band.status = BAND_STATUS.INVALIDE;
       band.errors.band = "Le calcul de cette bande est impossible.";
       hasInvalidBand = true;
     }
   });
 
-  if (hasInvalidBand || state.bands.length === 0) {
-    renderApp(state, dom);
-    return;
+  if (
+    commonValidation.valid &&
+    state.bands.length > 0 &&
+    !hasInvalidBand &&
+    !hasEmptyBand &&
+    state.bands.every((band) => band.status === BAND_STATUS.VALIDE)
+  ) {
+    const totalExposureVM = computeTotalExposureVM(
+      state.bands.map((band) => band.computed)
+    );
+
+    state.results.expositionTotaleVM = totalExposureVM;
+    state.results.expositionTotaleCopiable = formatNumberForCopy(
+      totalExposureVM,
+      COPY_DECIMALS_VM
+    );
+    state.results.texteDynamique = buildDynamicExposureText(
+      getVitrageDynamicLabel(commonValidation.parsedCommonInputs.vitrageKey),
+      totalExposureVM
+    );
   }
 
-  const totalExposureVM = computeTotalExposureVM(
-    state.bands.map((band) => band.computed)
-  );
+  updateViewOnly();
+}
 
-  state.results.expositionTotaleVM = totalExposureVM;
-  state.results.expositionTotaleCopiable = formatNumberForCopy(
-    totalExposureVM,
-    COPY_DECIMALS_VM
-  );
-  state.results.texteDynamique = buildDynamicExposureText(
-    getVitrageDynamicLabel(commonValidation.parsedCommonInputs.vitrageKey),
-    totalExposureVM
-  );
+function scheduleRecompute() {
+  window.clearTimeout(debounceTimer);
+  debounceTimer = window.setTimeout(() => {
+    syncInputsToState();
 
-  renderApp(state, dom);
+    if (!state.settings.expertMode) {
+      state.settings.attenuationAnfrText = String(DEFAULT_ANFR_ATTENUATION_DB);
+      updateExpertModeUI(dom, false, state.settings.attenuationAnfrText);
+    }
+
+    recomputeApplicationState();
+  }, INPUT_DEBOUNCE_MS);
 }
 
 function findSelectedAntennaMeta(antennaId) {
@@ -142,6 +192,7 @@ function findSelectedAntennaMeta(antennaId) {
 }
 
 async function handleAntennaSelectionChange() {
+  window.clearTimeout(debounceTimer);
   syncInputsToState();
   clearGlobalErrors();
   clearResultsState();
@@ -151,7 +202,11 @@ async function handleAntennaSelectionChange() {
   state.selectedDiagram = null;
   state.bands = [];
 
-  renderApp(state, dom);
+  clearBandsStructure(dom);
+  clearDiagramInfo(dom);
+  clearGlobalResults(dom);
+  renderAntennaRemarks(dom, state.selectedAntennaMeta);
+  updateViewOnly();
 
   if (!selectedAntennaMeta) {
     hideStatus(dom);
@@ -170,13 +225,17 @@ async function handleAntennaSelectionChange() {
     state.bands = createBandsStateFromDiagram(selectedDiagram);
     state.ui.isLoadingDiagram = false;
 
+    renderBandsStructure(dom, state.bands);
+    renderDiagramInfo(dom, state.selectedDiagram);
+    renderAntennaRemarks(dom, state.selectedAntennaMeta);
     hideStatus(dom);
-    renderApp(state, dom);
+
     recomputeApplicationState();
   } catch (error) {
     state.ui.isLoadingDiagram = false;
     state.selectedDiagram = null;
     state.bands = [];
+    clearBandsStructure(dom);
 
     const errorMessage = String(error?.message ?? error);
 
@@ -203,7 +262,7 @@ async function handleAntennaSelectionChange() {
       );
     }
 
-    renderApp(state, dom);
+    updateViewOnly();
   }
 }
 
@@ -217,7 +276,7 @@ async function loadAndRenderAntennaCatalog() {
 
     renderAntennaOptions(dom, state.antennaCatalog);
     hideStatus(dom);
-  } catch (error) {
+  } catch {
     showStatus(
       dom,
       "Lecture impossible",
@@ -245,21 +304,44 @@ async function handleCopyTotalExposure() {
   }
 }
 
+async function handleCopyBandExposure(bandKey) {
+  const band = state.bands.find((item) => item.key === bandKey);
+  const valueToCopy = band?.computed?.expositionCopiable?.trim();
+
+  if (!valueToCopy) {
+    showStatus(dom, "Copie impossible", "Aucune exposition de bande à copier.", true);
+    return;
+  }
+
+  try {
+    await copyTextToClipboard(valueToCopy);
+    showStatus(dom, "Copie réussie", `Exposition de la ${band.label} copiée dans le presse-papiers.`, false);
+  } catch {
+    showStatus(dom, "Copie impossible", "Impossible de copier l’exposition de la bande.", true);
+  }
+}
+
 function handleReset() {
+  window.clearTimeout(debounceTimer);
+
+  const savedCatalog = state.antennaCatalog;
   state = createInitialState();
+  state.antennaCatalog = savedCatalog;
   state.settings.attenuationAnfrText = String(DEFAULT_ANFR_ATTENUATION_DB);
 
-  isProgrammaticUpdate = true;
   renderAntennaOptions(dom, state.antennaCatalog);
-  renderApp(state, dom);
-  isProgrammaticUpdate = false;
-
+  renderCommonInputs(dom, state);
+  clearDiagramInfo(dom);
+  clearAntennaRemarks(dom);
+  clearBandsStructure(dom);
+  clearGlobalResults(dom);
+  resetVisualErrors(state, dom);
+  setCopyButtonEnabled(dom, false);
   hideStatus(dom);
 }
 
-function handleGenericInputChange() {
-  if (isProgrammaticUpdate) return;
-
+function handleImmediateCommonChange() {
+  window.clearTimeout(debounceTimer);
   syncInputsToState();
 
   if (!state.settings.expertMode) {
@@ -272,35 +354,48 @@ function handleGenericInputChange() {
 function bindEvents() {
   dom.antennaSelect.addEventListener("change", handleAntennaSelectionChange);
 
-  dom.distance3DInput.addEventListener("input", handleGenericInputChange);
-  dom.distance3DInput.addEventListener("change", handleGenericInputChange);
+  dom.distance3DInput.addEventListener("input", scheduleRecompute);
+  dom.deportAzimutInput.addEventListener("input", scheduleRecompute);
+  dom.attenuationAnfrInput.addEventListener("input", scheduleRecompute);
 
-  dom.vitrageSelect.addEventListener("change", handleGenericInputChange);
+  dom.distance3DInput.addEventListener("change", handleImmediateCommonChange);
+  dom.deportAzimutInput.addEventListener("change", handleImmediateCommonChange);
+  dom.attenuationAnfrInput.addEventListener("change", handleImmediateCommonChange);
 
-  dom.attenuationAnfrInput.addEventListener("input", handleGenericInputChange);
-  dom.attenuationAnfrInput.addEventListener("change", handleGenericInputChange);
+  dom.vitrageSelect.addEventListener("change", handleImmediateCommonChange);
 
   dom.expertModeCheckbox.addEventListener("change", () => {
+    window.clearTimeout(debounceTimer);
     syncInputsToState();
 
     if (!state.settings.expertMode) {
       state.settings.attenuationAnfrText = String(DEFAULT_ANFR_ATTENUATION_DB);
     }
 
-    renderApp(state, dom);
+    renderCommonInputs(dom, state);
     recomputeApplicationState();
   });
 
   dom.bandsContainer.addEventListener("input", (event) => {
     if (event.target.classList.contains("band-input")) {
-      handleGenericInputChange();
+      scheduleRecompute();
     }
   });
 
   dom.bandsContainer.addEventListener("change", (event) => {
     if (event.target.classList.contains("band-input")) {
-      handleGenericInputChange();
+      handleImmediateCommonChange();
     }
+  });
+
+  dom.bandsContainer.addEventListener("click", (event) => {
+    const button = event.target.closest(".copy-band-button");
+    if (!button) return;
+
+    const bandKey = button.dataset.bandKey;
+    if (!bandKey) return;
+
+    handleCopyBandExposure(bandKey);
   });
 
   dom.copyExposureButton.addEventListener("click", handleCopyTotalExposure);
@@ -311,11 +406,14 @@ async function initializeApplication() {
   dom = cacheDom();
 
   state.settings.attenuationAnfrText = String(DEFAULT_ANFR_ATTENUATION_DB);
-  renderApp(state, dom);
+  renderCommonInputs(dom, state);
+  clearDiagramInfo(dom);
+  clearAntennaRemarks(dom);
+  clearBandsStructure(dom);
+  clearGlobalResults(dom);
+  setCopyButtonEnabled(dom, false);
 
   await loadAndRenderAntennaCatalog();
-  renderApp(state, dom);
-
   bindEvents();
 }
 
