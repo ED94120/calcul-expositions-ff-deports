@@ -360,8 +360,18 @@ button:disabled{
 .copy-row{
   display: flex;
   gap: 10px;
-  align-items: end;
-  flex-wrap: wrap;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+}
+
+.copy-row .field{
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.copy-row .copy-band-button{
+  min-width: 120px;
+  align-self: flex-end;
 }
 
 .copy-row .field{
